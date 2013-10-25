@@ -25,18 +25,16 @@ public class Pop3Client implements Runnable {
 
 	public void fetchMails() throws UnknownHostException, IOException {
 		for (User user : users) {
-			// timestamp
 			this.socket = new Socket(user.getServer(), user.getPort());
-			Calendar cal = Calendar.getInstance();
 			// log dir
 			this.sessionProtocol = new File("D:/Mail/logs/" + user.getUser());
 
 			FileWriter fw = new FileWriter(sessionProtocol, true);
 
-			// Singlepoint of control
+			// Single point of control
 			String username = "USER " + user.getUser() + System.lineSeparator();
 			String password = "PASS " + user.getPass() + System.lineSeparator();
-			String time = "[" + cal.getTime().toString() + "] ";
+			
 
 			BufferedReader reader = new BufferedReader(new InputStreamReader(
 					socket.getInputStream()));
@@ -44,15 +42,15 @@ public class Pop3Client implements Runnable {
 					socket.getOutputStream()));
 
 			// login and protocol
-			fw.write(time + reader.readLine() + System.lineSeparator());
+			fw.write(getCurrentTime() + reader.readLine() + System.lineSeparator());
 			fw.flush();
-			fw.write(time + username);
+			fw.write(getCurrentTime() + username);
 			fw.flush();
 			writer.write(username);
 			writer.flush();
-			fw.write(time + reader.readLine() + System.lineSeparator());
+			fw.write(getCurrentTime() + reader.readLine() + System.lineSeparator());
 			fw.flush();
-			fw.write(time + password);
+			fw.write(getCurrentTime() + password);
 			fw.flush();
 			writer.write(password);
 			writer.flush();
@@ -65,27 +63,32 @@ public class Pop3Client implements Runnable {
 				count = Integer.parseInt(match.group(1));
 			}
 
-			fw.write(time + mails + System.lineSeparator());
+			fw.write(getCurrentTime() + mails + System.lineSeparator());
 			fw.flush();
 
 			// TODO fetch mails
-
 			for (int i = 1; i <= count; i++) {
-				String string = null;
-				fw.write(time + "RETR " + i + System.lineSeparator());
-				fw.flush();
-				writer.write("RETR " + i + System.lineSeparator());
+				writer.write("RETR "+i+System.lineSeparator());
 				writer.flush();
-				while ((string = reader.readLine()).startsWith(".")) {
-					System.out.println(string);
+				
+				FileWriter fwriter = new FileWriter(new File("D:/Mail/mails/"+i));
+				String string = reader.readLine();
+				while((string=reader.readLine()) != null && !(string.contains(".") && string.length() == 1)){
+					
+					fwriter.write(string+System.lineSeparator());
+					fwriter.flush();
 				}
+				fwriter.write(".");
+				
+				
 			}
-
-			fw.write(time + "QUIT " + System.lineSeparator());
+			
+			// quit connection to mail service
+			fw.write(getCurrentTime() + "QUIT " + System.lineSeparator());
 			fw.flush();
 			writer.write("QUIT " + System.lineSeparator());
 			writer.flush();
-			fw.write(time + reader.readLine() + System.lineSeparator());
+			fw.write(getCurrentTime() + reader.readLine() + System.lineSeparator());
 			fw.write("----------------------------------------------------"
 					+ System.lineSeparator());
 			fw.flush();
@@ -114,5 +117,10 @@ public class Pop3Client implements Runnable {
 
 		}
 
+	}
+	
+	private String getCurrentTime(){
+		Calendar cal = Calendar.getInstance();
+		return "[" + cal.getTime().toString() + "] ";
 	}
 }
