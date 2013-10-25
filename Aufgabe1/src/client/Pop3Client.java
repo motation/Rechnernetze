@@ -11,6 +11,8 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Calendar;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Pop3Client implements Runnable {
 	private List<User> users;
@@ -54,20 +56,41 @@ public class Pop3Client implements Runnable {
 			fw.flush();
 			writer.write(password);
 			writer.flush();
-			fw.write(time + reader.readLine() + System.lineSeparator());
+
+			// parse count of mails
+			String mails = reader.readLine();
+			Matcher match = Pattern.compile("\\w*\\s(\\d*)\\s").matcher(mails);
+			int count = 0;
+			while (match.find()) {
+				count = Integer.parseInt(match.group(1));
+			}
+
+			fw.write(time + mails + System.lineSeparator());
 			fw.flush();
+
+			// TODO fetch mails
+
+			for (int i = 1; i <= count; i++) {
+				String string = null;
+				fw.write(time + "RETR " + i + System.lineSeparator());
+				fw.flush();
+				writer.write("RETR " + i + System.lineSeparator());
+				writer.flush();
+				while ((string = reader.readLine()).startsWith(".")) {
+					System.out.println(string);
+				}
+			}
+
 			fw.write(time + "QUIT " + System.lineSeparator());
 			fw.flush();
 			writer.write("QUIT " + System.lineSeparator());
 			writer.flush();
+			fw.write(time + reader.readLine() + System.lineSeparator());
 			fw.write("----------------------------------------------------"
 					+ System.lineSeparator());
 			fw.flush();
-			
-			
-			// TODO fetch mails
-			
-			
+
+			// Connection close
 			fw.close();
 			writer.close();
 			reader.close();

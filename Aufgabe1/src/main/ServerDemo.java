@@ -1,40 +1,34 @@
 package main;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
 
+import client.Pop3Client;
 import client.User;
 
 public class ServerDemo {
 	public static void main(String[] args) throws IOException {
-//		new Thread(new Server()).start();
-//		Socket socket = new Socket("localhost", 1025);
-		
-		User user = new User("mail.gmx.net", 25, "s-o.fedders@gmx.de", "p!vD87#60");
-		
-		Socket socket = new Socket("pop.gmx.net", 995);
-		
-		InputStreamReader in = new InputStreamReader(socket.getInputStream());
-		
-		BufferedReader reader = new BufferedReader(in);
-		System.out.println(reader.readLine());
-		
-		OutputStreamWriter out = new OutputStreamWriter(socket.getOutputStream());
-		BufferedWriter writer = new BufferedWriter(out);
-		
-		writer.write("STAT");
-		writer.flush();
-		System.out.println(reader.readLine());
-		
-//		String string = null;
-//	
-//		while((string=reader.readLine()) != null){
-//			System.out.println(string);
-//		}
-		
+
+		Properties prop = new Properties();
+
+		try {
+			// load a properties file and absolute dir
+			prop.load(new FileInputStream(System.getProperty("user.dir")
+					+ "\\src\\config\\auth.properties"));
+		} catch (IOException ex) {
+			System.out.println(ex.getMessage());
+		}
+
+		User user = new User("pop.gmx.net", 110, prop.getProperty("usergmx"),
+				prop.getProperty("passgmx"));
+
+		List<User> users = new ArrayList<>();
+		users.add(user);
+		Pop3Client pop3 = new Pop3Client(users);
+		new Thread(pop3).start();
+
 	}
 }
