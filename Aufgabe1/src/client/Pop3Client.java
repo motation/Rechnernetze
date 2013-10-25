@@ -71,7 +71,15 @@ public class Pop3Client implements Runnable {
 				writer.write("RETR "+i+System.lineSeparator());
 				writer.flush();
 				
-				FileWriter fwriter = new FileWriter(new File("D:/Mail/mails/"+i));
+				// create dir and file
+				File mail = new File("D:/Mail/mails/"+user.getService());
+				mail.setExecutable(true);
+				mail.setWritable(true);
+				mail.mkdir();
+				mail = new File("D:/Mail/mails/"+ user.getService()+"/"+i);
+				
+				
+				FileWriter fwriter = new FileWriter(mail);
 				String string = reader.readLine();
 				while((string=reader.readLine()) != null && !(string.contains(".") && string.length() == 1)){
 					

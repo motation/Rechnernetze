@@ -29,7 +29,7 @@ public class ServerDemo {
 		}
 
 		User user = new User("pop.gmx.net", 110, prop.getProperty("usergmx"),
-				prop.getProperty("passgmx"));
+				prop.getProperty("passgmx"), "gmx");
 
 		List<User> users = new ArrayList<>();
 		users.add(user);

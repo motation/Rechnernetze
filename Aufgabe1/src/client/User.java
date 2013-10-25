@@ -2,6 +2,7 @@ package client;
 
 public class User {
 	private String server;
+	private String service;
 	public String getServer() {
 		return server;
 	}
@@ -38,10 +39,15 @@ public class User {
 	private String user;
 	private String pass;
 
-	public User(String server, int port, String user, String pass) {
+	public User(String server, int port, String user, String pass, String service) {
 		this.pass = pass;
 		this.port = port;
 		this.server = server;
 		this.user = user;
+		this.service = service;
+	}
+	
+	public String getService(){
+		return this.service;
 	}
 }
