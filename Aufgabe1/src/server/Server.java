@@ -53,7 +53,8 @@ public class Server {
 				connectionSocket = welcomeSocket.accept();
 
 				/* Neuen Arbeits-Thread erzeugen und den Socket übergeben */
-				(new ServerConnection(++counter, connectionSocket)).start();
+				new Thread(new ServerConnection(++counter, connectionSocket)).start();
+				
 			}
 		} catch (IOException e) {
 			System.err.println(e.toString());

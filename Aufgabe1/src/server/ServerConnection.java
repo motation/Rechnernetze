@@ -10,7 +10,7 @@ import java.net.Socket;
 
 
 // ArbeitsThread
-public class ServerConnection extends Thread {
+public class ServerConnection implements Runnable {
 
 	private int name;
 	private BufferedReader inFromClient;
