@@ -22,8 +22,8 @@ public class ServerDemo {
 			System.out.println(ex.getMessage());
 		}
 
-		User user = new User("pop.gmx.net", 110, prop.getProperty("usergmx"),
-				prop.getProperty("passgmx"), "gmx");
+		User user = new User("pop3.web.de", 110, prop.getProperty("userweb"),
+				prop.getProperty("passweb"), "web");
 
 		List<User> users = new ArrayList<>();
 		users.add(user);
