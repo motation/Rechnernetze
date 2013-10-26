@@ -105,6 +105,7 @@ public class Pop3Client implements Runnable {
 					fileWriter.flush();
 				}
 				fileWriter.write(".");
+				fileWriter.flush();
 				fileWriter.close();
 
 			}
