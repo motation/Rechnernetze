@@ -17,7 +17,7 @@ public class ServerDemo {
 		try {
 			// load a properties file and absolute dir
 			prop.load(new FileInputStream(System.getProperty("user.dir")
-					+ "\\src\\config\\auth.properties"));
+					+ "/src/config/auth.properties"));
 		} catch (IOException ex) {
 			System.out.println(ex.getMessage());
 		}
