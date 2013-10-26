@@ -18,27 +18,11 @@ public class ServerConnection implements Runnable {
 	private Socket socket;
 	boolean serviceRequested = true; // Arbeitsthread beenden?
 	
-//	private final String USER = "USER";
-//	private final String PASS = "PASS";
-//	private final String QUIT = "QUIT";
-//	private final String STAT = "STAT";
-//	private final String LIST = "LIST";
-//	private final String RETR = "RETR";
-//	
-//	private final String DELE = "DELE";
-//	private final String NOOP = "NOOP";
-//	private final String RSET = "RSET";
-//	private final String UIDL = "UIDL";
-	
 	private final String COMMAND_NOT_FOUND = "ERROR: Command not found.";
 	private final char WHITESPACE = ' ';
 	
 	private final int COMMAND_LENGTH = 4;
-	private final int WHITESPACE_POSITION = 5;
-
-//	public ServerConnection(Socket socket) {
-//		this.socket = socket;
-//	}
+	private final int WHITESPACE_POSITION = 4;
 	
 	public ServerConnection(int num, Socket sock) {
 		/* Konstruktor */
@@ -49,20 +33,7 @@ public class ServerConnection implements Runnable {
 
 	@Override
 	public void run() {
-//		System.out.println("Client is connected");
-//		while (!Thread.currentThread().isInterrupted()) {
-//			try {
-//				System.out.println("Fetch Data");
-//				Thread.sleep(5000);
-//			} catch (InterruptedException e) {
-//				System.out.println(e.getMessage());
-//				Thread.currentThread().interrupt();
-//			}
-//
-//		}
-//		
 		String inputString;
-//		String outputString;
 		String command;
 		String parameter;
 
@@ -91,14 +62,10 @@ public class ServerConnection implements Runnable {
 					
 				/* Prüft ob ein Befehl mit Parameter im Input vorliegt */
 				} else if (inputString.length() > COMMAND_LENGTH && inputString.charAt(WHITESPACE_POSITION) == WHITESPACE) {
-					System.out.println("TEST12355");
 					command = inputString.substring(0, 4);
-					parameter = inputString.substring(5, inputString.length());
+					parameter = inputString.substring(WHITESPACE_POSITION, inputString.length());
 					/* Ruft eine Methode mit dem Namen des Befehls und den Parameter auf */
 					callMethod(command, parameter);
-					
-//				} else {
-//					System.err.println(COMMAND_NOT_FOUND);
 				}
 			}
 
@@ -126,16 +93,22 @@ public class ServerConnection implements Runnable {
 				+ " has written the message: " + reply);
 	}
 	
+	/* Findet eine Methode in dieser Klasse mit dem Namen "command" und ruft diese auf 
+	 * und schreibt das Ergebnis zum Client */
 	private void callMethod(String command) throws Exception {
 		Method command_method = getClass().getDeclaredMethod(command);
         writeToClient((String) command_method.invoke(this));
 	}
 	
+	/* Findet eine Methode in dieser Klasse mit dem Namen "command" und ruft diese mit
+	 *  den Parametern "parameter" auf und schreibt das Ergebnis zum Client */
 	private void callMethod(String command, String parameter) throws Exception {
-		Method command_method = getClass().getMethod(command, String.class);
+		Method command_method = getClass().getDeclaredMethod(command, String.class);
 		writeToClient((String) command_method.invoke(this, parameter));
 	}
 	
+	
+	// TODO: Implementierung aller Methoden
 	private String USER(String name) {
         return name;
     }
