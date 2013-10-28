@@ -93,7 +93,8 @@ public class Pop3Client implements Runnable {
 				mail.setWritable(true);
 				mail.mkdir();
 				mail = new File(prop.getProperty("windowsDir") + "mails/"
-						+ user.getService() + "/" + i);
+						+ user.getService() + "/" + i + "--"
+						+ System.nanoTime());
 
 				// looping to get mail content till single "."
 				FileWriter fileWriter = new FileWriter(mail);
