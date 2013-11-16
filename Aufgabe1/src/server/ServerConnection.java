@@ -81,17 +81,14 @@ public class ServerConnection implements Runnable {
 						callMethod(command);
 					} catch (Exception e) {
 						writeToClient("Command not found.");
-						e.printStackTrace();
 					}
 
 					/* Prueft ob ein Befehl mit Parameter im Input vorliegt */
 				} else if (inputString.length() > COMMAND_LENGTH
 						&& inputString.charAt(WHITESPACE_POSITION) == WHITESPACE) {
 					command = inputString.substring(0, 4).toLowerCase();
-					System.out.println(command);
 					parameter = inputString.substring(WHITESPACE_POSITION + 1,
 							inputString.length());
-					System.out.println(parameter);
 					/*
 					 * Ruft eine Methode mit dem Namen des Befehls und den
 					 * Parameter auf
@@ -100,7 +97,6 @@ public class ServerConnection implements Runnable {
 						callMethod(command, parameter);
 					} catch (Exception e) {
 						writeToClient("Command not found.");
-						e.printStackTrace();
 					}
 				} else {
 					writeToClient("Something went wrong.");
@@ -118,7 +114,7 @@ public class ServerConnection implements Runnable {
 	}
 
 	private String readFromClient() throws IOException {
-		/* Lies die nächste Anfrage-Zeile (request) vom Client */
+		/* Lies die nï¿½chste Anfrage-Zeile (request) vom Client */
 		String request = inFromClient.readLine();
 		System.out.println("SERVERNAME detected job: " + request);
 		return request;
@@ -392,7 +388,6 @@ public class ServerConnection implements Runnable {
 		int numberOfMessages = 0;
 
 		for (Mail mail : mails) {
-
 			if (!mail.isMarked())
 				numberOfMessages++;
 		}

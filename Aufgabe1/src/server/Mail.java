@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Mail {
+public class Mail implements Comparable{
 	private String uidl;
 	private File file;
 	private long createTime;
@@ -59,9 +59,9 @@ public class Mail {
 		return fileName;
 	}
 
-//	@Override
-//	public int compareTo(Object arg0) {
-//		// TODO Auto-generated method stub
-//		return 0;
-//	}
+	@Override
+	public int compareTo(Object arg0) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 }
