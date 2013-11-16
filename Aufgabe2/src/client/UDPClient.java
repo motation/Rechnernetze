@@ -1,4 +1,4 @@
-package main;
+package client;
 
 /*
  * UDPClient.java
