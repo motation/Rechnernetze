@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UDPServer {
-	final static int SERVER_PORT = 9876;
+	final static int SERVER_PORT = 50000;
 	final static int BUFFER_SIZE = 1024;
 	private static final String SERVERNAME = "ChatServer";
 
@@ -34,13 +34,9 @@ public class UDPServer {
 
 	/* Error-Messages */
 	private static final String SENDING_ERROR = "ERROR Couldn't send Data to Client:\n";
-	private static final String USER_NOT_FOUND = "ERROR User doesn't exist.";
 	private static final String COMMAND_NOT_FOUND = "ERROR Command not found.";
-	private User user;
 
 	public void startService() {
-		String capitalizedSentence;
-
 		try {
 			/*
 			 * UDP-Socket erzeugen (kein Verbindungsaufbau!) Socket wird an den
@@ -50,11 +46,10 @@ public class UDPServer {
 			System.out.println(SERVERNAME
 					+ ": Waiting for connection - listening UDP port "
 					+ SERVER_PORT);
-
 			while (serviceRequested) {
 				readFromClient();
 			}
-
+			
 			/* Socket schließen (freigeben) */
 			serverSocket.close();
 			System.out.println("Server shut down!");
@@ -87,30 +82,24 @@ public class UDPServer {
 		InetAddress receivedIPAddress = receivePacket.getAddress();
 		int receivedPort = receivePacket.getPort();
 		SocketAddress receivedSocketAddress = receivePacket.getSocketAddress();
+		System.out.println(SERVERNAME + " got: " + receiveString);
 
-		System.out.println(SERVERNAME + " got from: " + receiveString);
-		if (isUserNotConnected(receivedSocketAddress) && !receiveString.startsWith("NEW ")) {
-			writeToClient(receivedIPAddress, receivedPort, "Please register first.");
-		} else if (receiveString.startsWith("NEW ")) { 
-			newUser(new User(receiveString.substring(3, receiveString.length()), receivedSocketAddress, receivedIPAddress, receivedPort));
+		
+
+		if (receiveString.equals("BYE")) {
+			quit(receivedSocketAddress, receivedIPAddress, receivedPort);
+		} else if (receiveString.startsWith("NEW ")) {
+			newUser(
+					receiveString.substring(3, receiveString.length()),
+					receivedSocketAddress, receivedIPAddress, receivedPort);
+		} else if (receiveString.equals("INFO")) {
+			writeToClient(receivedIPAddress, receivedPort, getAllUser());
 		} else {
-			
-			if (receiveString == "SHUTDOWN") {
-				serviceRequested = false;
-			} else if (receiveString == "QUIT"){
-				quitUser(getUser(receivedSocketAddress));
-			} else if (receiveString.startsWith("NEW ")) {
-				/* Nur noch Umbennenung, da schon angemeldet! */
-				getUser(receivedSocketAddress).setUserName(receiveString.substring(3, receiveString.length()));
-			} else {
-				error(getUser(receivedSocketAddress), COMMAND_NOT_FOUND);
-			}
-			
+			error(receivedSocketAddress, receivedIPAddress, receivedPort, COMMAND_NOT_FOUND);
 		}
-		
-		
+
 	}
-	
+
 	/*
 	 * Sendet eine Nachricht an einen bestimmten User
 	 */
@@ -123,8 +112,7 @@ public class UDPServer {
 
 		/* Antwort-Paket erzeugen */
 		DatagramPacket sendPacket = new DatagramPacket(sendData,
-				sendData.length, ipAddress,
-				port);
+				sendData.length, ipAddress, port);
 		/* Senden des Pakets */
 		try {
 			serverSocket.send(sendPacket);
@@ -135,54 +123,39 @@ public class UDPServer {
 
 		System.out.println(SERVERNAME + " has sent the message: " + sendString);
 	}
-
-	private void writeToClient(User user, String sendString) {
-		writeToClient(user.getReceivedIPAddress(), user.getReceivedPort(),
-				sendString);
-	}
-
-	/*
-	 * Sendet eine Nachricht an alle User
-	 */
-	private void writeToAllClients(String sendString) {
-		/* String in Byte-Array umwandeln */
-		byte[] sendData = sendString.getBytes();
-
-		/* Zu jedem User senden */
-		for (User user : users) {
-			writeToClient(user, sendString);
-		}
-
-		System.out.println(SERVERNAME + " has sent to all User the message: "
-				+ sendString);
-	}
-
+	
 	/*
 	 * Error-Handling
 	 */
-	private void error(User user, String errorMessage) {
-		writeToClient(user, errorMessage);
-		quitUser(user);
+	private void error(SocketAddress socketAddress,InetAddress ipAddress,int port, String errorMessage) {
+		writeToClient(ipAddress, port, errorMessage);
+		quit(socketAddress, ipAddress, port);
 	}
 
 	/*
 	 * Legt einen neuen User an und bestätigt
 	 */
-	private void newUser(User user) {
-		users.add(user);
-		writeToClient(user, SUCCESS);
+	private void newUser(String userName,SocketAddress socketAddress,InetAddress ipAddress,int port) {
+		if (isUserUnknown(socketAddress)) {
+			User user = new User(userName, socketAddress, ipAddress, port);
+			users.add(user);
+			
+		} else {
+			User user = users.get(getIndexOfUser(socketAddress));
+			user.setUserName(userName);
+		}
+		writeToClient(ipAddress, port, SUCCESS);
 	}
 
 	/*
 	 * Löscht einen User aus der User-Map.
 	 */
-	private void quitUser(User user) {
-		// int userIndex = getUser(socketAddress);
-		// user = users.get(userIndex);
-		// user = null;
-		// users.remove(userIndex);
-		users.remove(getIndexOfUser(user.getSocketAddress()));
-		writeToClient(user, QUIT);
+	private void quit(SocketAddress socketAddress,InetAddress ipAddress,int port) {
+		if (!isUserUnknown(socketAddress)) {
+			users.remove(getIndexOfUser(socketAddress));
+		}		
+		writeToClient(ipAddress, port, QUIT);
+		serverSocket.disconnect();
 	}
 
 	/*
@@ -198,10 +171,6 @@ public class UDPServer {
 		return -1;
 	}
 	
-	private User getUser(SocketAddress socketAddress) {
-		return users.get(getIndexOfUser(socketAddress));
-	}
-
 	/*
 	 * Gibt eine Liste aller Namen der angemeldeten User als String zurück.
 	 */
@@ -214,7 +183,10 @@ public class UDPServer {
 		return resultString;
 	}
 
-	private boolean isUserNotConnected(SocketAddress socketAddress) {
+	/*
+	 * Prüft ob der User nicht in der User-Liste ist.
+	 */
+	private boolean isUserUnknown(SocketAddress socketAddress) {
 		for (User user : users) {
 			if (user.getSocketAddress().equals(socketAddress)) {
 				return false;

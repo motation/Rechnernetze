@@ -19,7 +19,7 @@ import java.util.Scanner;
 
 
 public class UDPClient {
-  public final int SERVER_PORT = 9876;
+  public final int SERVER_PORT = 50000;
   public static final int BUFFER_SIZE = 1024;
   private DatagramSocket clientSocket; // UDP-Socketklasse
   private InetAddress serverIpAddress; // IP-Adresse des Zielservers
