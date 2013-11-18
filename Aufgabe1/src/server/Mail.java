@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Mail implements Comparable{
+public class Mail implements Comparable {
 	private String uidl;
 	private File file;
 	private long createTime;
@@ -17,14 +17,17 @@ public class Mail implements Comparable{
 		this.marked = false;
 		this.fileSrc = file.getPath();
 		this.fileName = file.getName();
-		Matcher match = Pattern.compile("(.*?)[-]{2}([^\\s]*)").matcher(
-				fileName);
-		try {
-			uidl = match.group(1);
-			createTime = Long.parseLong(match.group(2));
-		} catch (Exception e) {
-			System.out.println(e.getMessage());
+
+		String regex = "(.*?)--(.*?)$";
+		String search = fileName;
+
+		Matcher matcher = Pattern.compile(regex).matcher(search);
+
+		if (matcher.find()) {
+			uidl = matcher.group(1);
+			createTime = Long.parseLong(matcher.group(2));
 		}
+
 	}
 
 	public String getFileSrc() {
