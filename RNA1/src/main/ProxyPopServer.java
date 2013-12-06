@@ -9,7 +9,7 @@ import client.User;
 
 public class ProxyPopServer {
 	public static void main(String[] args) throws IOException {
-		User user = new User("s-o.fedders@gmx.de", "p!vD87#60", "pop.gmx.net",
+		User user = new User("s-o.fedders@gmx.de", "***", "pop.gmx.net",
 				110);
 		List<User> users = new ArrayList<>();
 		users.add(user);
