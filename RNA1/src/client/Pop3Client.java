@@ -101,8 +101,13 @@ public class Pop3Client implements Runnable {
 					String string = readFromServer();
 					while ((string = readFromServer()) != null
 							&& !(string.contains(".") && string.length() == 1)) {
-						fileWriter.write(string);
-						fileWriter.flush();
+						if(string.startsWith(".")){
+							fileWriter.write(string.substring(1) + System.lineSeparator());
+							fileWriter.flush();
+						} else {
+							fileWriter.write(string + System.lineSeparator());
+							fileWriter.flush();
+						}
 					}
 
 					fileWriter.close();

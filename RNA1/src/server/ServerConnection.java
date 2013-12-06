@@ -4,11 +4,13 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
@@ -99,6 +101,7 @@ public class ServerConnection implements Runnable {
 					break;
 				case "uidl":
 					this.uidl(this.getCommandAndParam(request));
+					break;
 				case "quit":
 					this.quit(this.getCommandAndParam(request));
 					break;
@@ -168,14 +171,51 @@ public class ServerConnection implements Runnable {
 		} else if (!user.isLogged()) {
 			this.notAllowedInThisState();
 		} else if (user.isLogged()) {
-			this.mails = getAddedMails(this.users);
-			writeToClient("+OK " + this.mails.size() + " " + this.getOctets());
+
+			this.mails.addAll(this.getAddedMails(this.users));
+
+			writeToClient("+OK " + this.numberOfMails(this.mails) + " "
+					+ this.getOctets());
 		}
 
 	}
 
 	private void uidl(List<String> request) throws IOException {
-		// TODO uidl method
+		if (request.size() > 1) {
+			int num = 0;
+			try {
+				num = Integer.parseInt(request.get(1));
+			} catch (Exception e) {
+				invalidSequence(request.get(1));
+				return;
+			}
+			if (user.isLogged()) {
+				this.mails.addAll(this.getAddedMails(this.users));
+				List<Mail> unmarked = this.getUnmarkedMails(this.mails);
+				Collections.sort(unmarked);
+				if (num <= unmarked.size()) {
+					writeToClient("+OK " + num + " "
+							+ unmarked.get(num - 1).getUidl());
+				} else {
+					writeToClient("-ERR no such uidl");
+				}
+			} else {
+				this.notAllowedInThisState();
+			}
+		} else if (request.size() == 1 && user.isLogged()) {
+			this.mails.addAll(this.getAddedMails(this.users));
+			List<Mail> unmarked = this.getUnmarkedMails(this.mails);
+			Collections.sort(unmarked);
+			writeToClient("+OK printing uidls");
+			int count = 1;
+			for (Mail mail : unmarked) {
+				writeToClient(count + " " + mail.getUidl());
+				count++;
+			}
+			writeToClient(".");
+		} else {
+			this.notAllowedInThisState();
+		}
 	}
 
 	private void quit(List<String> request) throws IOException {
@@ -188,12 +228,29 @@ public class ServerConnection implements Runnable {
 		}
 	}
 
-	private void noop(List<String> request) {
-		// TODO noop method
+	private void noop(List<String> request) throws IOException {
+		writeToClient("+OK");
 	}
 
-	private void rset(List<String> request) {
-		// TODO rset method
+	private void rset(List<String> request) throws IOException {
+		if (request.size() == 1) {
+			if (user.isLogged()) {
+				int num = 0;
+				long octets = 0L;
+				for (Mail mail : this.mails) {
+					if (mail.isMarked()) {
+						mail.setMarked(false);
+						num++;
+						octets += mail.getOctets();
+					}
+				}
+				writeToClient("+OK maildrop has " + num + " " + octets);
+			} else {
+				this.notAllowedInThisState();
+			}
+		} else if (request.size() > 1) {
+			this.tooManyArguments();
+		}
 	}
 
 	private void list(List<String> request) throws IOException {
@@ -208,22 +265,113 @@ public class ServerConnection implements Runnable {
 			if (!user.isLogged()) {
 				this.notAllowedInThisState();
 			} else {
-				// TODO print mails with index
-				this.mails = getAddedMails(this.users);
-				// TODO transform to list and get index - 1 and sort etc
+
+				this.mails.addAll(this.getAddedMails(this.users));
+
+				List<Mail> mailList = this.getUnmarkedMails(this.mails);
+				Collections.sort(mailList);
+				if (num <= mailList.size()) {
+					writeToClient("+OK " + num + " "
+							+ mailList.get(num - 1).getOctets());
+				} else {
+					writeToClient("-ERR message not found");
+				}
 
 			}
 		} else if (!user.isLogged()) {
 			this.notAllowedInThisState();
+		} else if (request.size() == 1 && user.isLogged()) {
+
+			this.mails.addAll(this.getAddedMails(this.users));
+
+			List<Mail> mailList = this.getUnmarkedMails(this.mails);
+			Collections.sort(mailList);
+			writeToClient("+OK " + mailList.size() + " " + this.getOctets());
+			int i = 1;
+			for (Mail mail : mailList) {
+				writeToClient(i + " " + mail.getOctets());
+				i++;
+			}
+			writeToClient(".");
 		}
 	}
 
-	private void dele(List<String> request) {
-		// TODO dele method
+	private void dele(List<String> request) throws IOException {
+		if (request.size() > 1) {
+
+			int num = 0;
+			try {
+				num = Integer.parseInt(request.get(1));
+			} catch (Exception e) {
+				invalidSequence(request.get(1));
+				return;
+			}
+			if (!user.isLogged()) {
+				this.notAllowedInThisState();
+			} else {
+
+				this.mails.addAll(this.getAddedMails(this.users));
+
+				List<Mail> mailList = this.getUnmarkedMails(this.mails);
+				Collections.sort(mailList);
+
+				if (num <= mailList.size()) {
+					mailList.get(num - 1).setMarked(true);
+					writeToClient("+OK message marked");
+				} else {
+					writeToClient("-ERR noch such message");
+				}
+
+			}
+
+		} else if (request.size() == 1) {
+			this.argumentMissing();
+		}
 	}
 
-	private void retr(List<String> request) {
-		// TODO retr method
+	private void retr(List<String> request) throws IOException {
+		if (request.size() == 1) {
+			this.argumentMissing();
+		} else if (request.size() > 1) {
+			int num = 0;
+			try {
+				num = Integer.parseInt(request.get(1));
+			} catch (Exception e) {
+				invalidSequence(request.get(1));
+				return;
+			}
+			if (user.isLogged()) {
+
+				this.mails.addAll(this.getAddedMails(this.users));
+				List<Mail> unmarked = this.getUnmarkedMails(this.mails);
+				Collections.sort(unmarked);
+
+				if (num <= unmarked.size()) {
+					writeToClient("+OK " + num + " "
+							+ unmarked.get(num - 1).getOctets());
+
+					FileReader fis = new FileReader(unmarked.get(num - 1)
+							.getFile());
+					BufferedReader reader = new BufferedReader(fis);
+					String line = null;
+					while ((line = reader.readLine()) != null) {
+						if (line.startsWith(".")) {
+							writeToClient("." + line);
+						} else {
+							writeToClient(line);
+						}
+					}
+
+					writeToClient(".");
+					reader.close();
+				}
+
+			} else {
+				this.notAllowedInThisState();
+			}
+
+		}
+
 	}
 
 	private List<String> getCommandAndParam(String request) {
@@ -267,6 +415,9 @@ public class ServerConnection implements Runnable {
 
 	private Set<Mail> getAddedMails(List<User> users) {
 		Set<Mail> mails = new HashSet<>();
+
+		// TODO check if mail all mails are available on the file system
+
 		for (User user : users) {
 			mails.addAll(Factory.getAllMails(user.getMailFolder()));
 		}
@@ -275,5 +426,25 @@ public class ServerConnection implements Runnable {
 
 	private void invalidSequence(String request) throws IOException {
 		writeToClient("-ERR invalid sequence number: " + request);
+	}
+
+	private int numberOfMails(Set<Mail> mails) {
+		int num = 0;
+		for (Mail mail : mails) {
+			if (!mail.isMarked()) {
+				num++;
+			}
+		}
+		return num;
+	}
+
+	private List<Mail> getUnmarkedMails(Set<Mail> mails) {
+		List<Mail> unmarked = new ArrayList<>();
+		for (Mail mail : mails) {
+			if (!mail.isMarked()) {
+				unmarked.add(mail);
+			}
+		}
+		return unmarked;
 	}
 }
